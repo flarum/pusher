@@ -22,7 +22,8 @@ app.initializers.add('pusher', () => {
 
     loadPusher.resolve({
       main: socket.subscribe('public'),
-      user: app.session.user ? socket.subscribe('private-user' + app.session.user.id()) : null
+      user: app.session.user ? socket.subscribe('private-user-' + app.session.user.id()) : null,
+      users: app.session.user ? socket.subscribe('presence-users') : null
     });
   });
 
