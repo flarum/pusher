@@ -19,27 +19,49 @@ use Pusher;
 
 class AuthAction implements Action
 {
+    /**
+     * @var SettingsRepository
+     */
     protected $settings;
+
+    /**
+     * @var Pusher
+     */
+    protected $pusher;
 
     public function __construct(SettingsRepository $settings)
     {
         $this->settings = $settings;
+
+        $this->pusher = new Pusher(
+            $this->settings->get('pusher.app_key'),
+            $this->settings->get('pusher.app_secret'),
+            $this->settings->get('pusher.app_id')
+        );
     }
 
+    /**
+     * Handles ajax authentication from pusher
+     * @param Request $request
+     * @return EmptyResponse|JsonResponse
+     */
     public function handle(Request $request)
     {
-        $userChannel = 'private-user' . $request->actor->id;
+        $authResponse = null;
 
-        if ($request->get('channel_name') === $userChannel) {
-            $pusher = new Pusher(
-                $this->settings->get('pusher.app_key'),
-                $this->settings->get('pusher.app_secret'),
-                $this->settings->get('pusher.app_id')
-            );
+        $privateChannels = ['private-user-' . $request->actor->id];
+        $presenceChannels = ['presence-users'];
 
-            $payload = json_decode($pusher->socket_auth($userChannel, $request->get('socket_id')), true);
+        if (in_array($request->get('channel_name'), $privateChannels)) {
 
-            return new JsonResponse($payload);
+            $authResponse = $this->pusher->socket_auth($request->get('channel_name'), $request->get('socket_id'));
+        } elseif(in_array($request->get('channel_name'), $presenceChannels)) {
+            $authResponse = $this->pusher->presence_auth($request->get('channel_name'), $request->get('socket_id'), $request->actor->username);
+        }
+
+        if($authResponse)
+        {
+            return new JsonResponse(json_decode($authResponse,true));
         }
 
         return new EmptyResponse(403);
