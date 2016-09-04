@@ -14,6 +14,7 @@ namespace Flarum\Pusher\Listener;
 use Flarum\Core\Guest;
 use Flarum\Event\NotificationWillBeSent;
 use Flarum\Event\PostWasPosted;
+use Flarum\Event\DiscussionWasStarted;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Illuminate\Contracts\Events\Dispatcher;
 use Pusher;
@@ -39,6 +40,7 @@ class PushNewPosts
     public function subscribe(Dispatcher $events)
     {
         $events->listen(PostWasPosted::class, [$this, 'pushNewPost']);
+        $events->listen(DiscussionWasStarted::class, [$this, 'pushNewDiscussion']);
         $events->listen(NotificationWillBeSent::class, [$this, 'pushNotification']);
     }
 
@@ -54,6 +56,25 @@ class PushNewPosts
                 'postId' => $event->post->id,
                 'discussionId' => $event->post->discussion->id,
                 'tagIds' => $event->post->discussion->tags()->lists('id')
+            ]);
+        }
+    }
+
+    /**
+     * @param DiscussionWasStarted $event
+     */
+    public function pushNewDiscussion(DiscussionWasStarted $event)
+    {
+      if ($event->discussion->start_user_id)
+        $discussion = $event->discussion->whereVisibleTo(new Guest)->first();
+
+        if ($discussion) {
+            $pusher = $this->getPusher();
+
+            $pusher->trigger('public', 'newPost', [
+                'postId' => $event->discussion->start_post_id,
+                'discussionId' => $event->discussion->id,
+                'tagIds' => $event->discussion->tags()->lists('id')
             ]);
         }
     }
