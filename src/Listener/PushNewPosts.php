@@ -12,9 +12,9 @@
 namespace Flarum\Pusher\Listener;
 
 use Flarum\Core\Guest;
+use Flarum\Event\DiscussionWasStarted;
 use Flarum\Event\NotificationWillBeSent;
 use Flarum\Event\PostWasPosted;
-use Flarum\Event\DiscussionWasStarted;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Illuminate\Contracts\Events\Dispatcher;
 use Pusher;
@@ -65,17 +65,18 @@ class PushNewPosts
      */
     public function pushNewDiscussion(DiscussionWasStarted $event)
     {
-      if ($event->discussion->start_user_id)
-        $discussion = $event->discussion->whereVisibleTo(new Guest)->first();
+        if ($event->discussion->start_user_id) {
+            $discussion = $event->discussion->whereVisibleTo(new Guest)->first();
 
-        if ($discussion) {
-            $pusher = $this->getPusher();
+            if ($discussion) {
+                $pusher = $this->getPusher();
 
-            $pusher->trigger('public', 'newPost', [
-                'postId' => $event->discussion->start_post_id,
-                'discussionId' => $event->discussion->id,
-                'tagIds' => $event->discussion->tags()->lists('id')
-            ]);
+                $pusher->trigger('public', 'newPost', [
+                    'postId' => $event->discussion->start_post_id,
+                    'discussionId' => $event->discussion->id,
+                    'tagIds' => $event->discussion->tags()->lists('id')
+                ]);
+            }
         }
     }
 
