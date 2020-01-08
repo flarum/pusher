@@ -10,7 +10,7 @@ import Button from 'flarum/components/Button';
 app.initializers.add('flarum-pusher', () => {
   const loadPusher = m.deferred();
 
-  $.getScript('//js.pusher.com/3.0/pusher.min.js', () => {
+  $.getScript('//js.pusher.com/5.0/pusher.min.js', () => {
     const socket = new Pusher(app.forum.attribute('pusherKey'), {
       authEndpoint: app.forum.attribute('apiUrl') + '/pusher/auth',
       cluster: app.forum.attribute('pusherCluster'),
@@ -23,7 +23,8 @@ app.initializers.add('flarum-pusher', () => {
 
     loadPusher.resolve({
       main: socket.subscribe('public'),
-      user: app.session.user ? socket.subscribe('private-user' + app.session.user.id()) : null
+      user: app.session.user ? socket.subscribe('private-user' + app.session.user.id()) : null,
+      pusher: socket
     });
   });
 
@@ -33,8 +34,8 @@ app.initializers.add('flarum-pusher', () => {
   extend(DiscussionList.prototype, 'config', function(x, isInitialized, context) {
     if (isInitialized) return;
 
-    app.pusher.then(channels => {
-      channels.main.bind('newPost', data => {
+    app.pusher.then(pusher => {
+      pusher.bind('newPost', data => {
         const params = this.props.params;
 
         if (!params.q && !params.sort && !params.filter) {
@@ -58,7 +59,7 @@ app.initializers.add('flarum-pusher', () => {
         }
       });
 
-      extend(context, 'onunload', () => channels.main.unbind('newPost'));
+      extend(context, 'onunload', () => pusher.unbind('newPost'));
     });
   });
 
@@ -108,8 +109,10 @@ app.initializers.add('flarum-pusher', () => {
   extend(DiscussionPage.prototype, 'config', function(x, isInitialized, context) {
     if (isInitialized) return;
 
-    app.pusher.then(channels => {
-      channels.main.bind('newPost', data => {
+    app.pusher.then(binding => {
+      const pusher = binding.pusher;
+
+      pusher.bind('newPost', data => {
         const id = String(data.discussionId);
 
         if (this.discussion && this.discussion.id() === id && this.stream) {
