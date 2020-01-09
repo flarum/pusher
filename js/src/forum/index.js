@@ -22,8 +22,10 @@ app.initializers.add('flarum-pusher', () => {
     });
 
     loadPusher.resolve({
-      main: socket.subscribe('public'),
-      user: app.session.user ? socket.subscribe('private-user' + app.session.user.id()) : null,
+      channels: {
+        main: socket.subscribe('public'),
+        user: app.session.user ? socket.subscribe('private-user' + app.session.user.id()) : null,
+      },
       pusher: socket
     });
   });
@@ -34,7 +36,9 @@ app.initializers.add('flarum-pusher', () => {
   extend(DiscussionList.prototype, 'config', function(x, isInitialized, context) {
     if (isInitialized) return;
 
-    app.pusher.then(pusher => {
+    app.pusher.then(binding => {
+      const pusher = binding.pusher;
+
       pusher.bind('newPost', data => {
         const params = this.props.params;
 
@@ -130,7 +134,7 @@ app.initializers.add('flarum-pusher', () => {
         }
       });
 
-      extend(context, 'onunload', () => channels.main.unbind('newPost'));
+      extend(context, 'onunload', () => pusher.unbind('newPost'));
     });
   });
 
@@ -138,7 +142,9 @@ app.initializers.add('flarum-pusher', () => {
     items.remove('refresh');
   });
 
-  app.pusher.then(channels => {
+  app.pusher.then(bindings => {
+    const channels = bindings.channels;
+
     if (channels.user) {
       channels.user.bind('notification', () => {
         app.session.user.pushAttributes({
