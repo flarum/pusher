@@ -142,8 +142,8 @@ app.initializers.add('flarum-pusher', () => {
     items.remove('refresh');
   });
 
-  app.pusher.then(bindings => {
-    const channels = bindings.channels;
+  app.pusher.then(binding => {
+    const channels = binding.channels;
 
     if (channels.user) {
       channels.user.bind('notification', () => {
