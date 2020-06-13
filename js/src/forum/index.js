@@ -10,7 +10,7 @@ import Button from 'flarum/components/Button';
 app.initializers.add('flarum-pusher', () => {
   const loadPusher = m.deferred();
 
-  $.getScript('//js.pusher.com/5.0/pusher.min.js', () => {
+  $.getScript('//cdn.jsdelivr.net/npm/pusher-js@5', () => {
     const socket = new Pusher(app.forum.attribute('pusherKey'), {
       authEndpoint: app.forum.attribute('apiUrl') + '/pusher/auth',
       cluster: app.forum.attribute('pusherCluster'),
