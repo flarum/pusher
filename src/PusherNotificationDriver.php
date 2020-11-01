@@ -40,7 +40,7 @@ class PusherNotificationDriver implements NotificationDriverInterface
     /**
      * {@inheritDoc}
      */
-    public function addUserPreference(string $blueprintClass, bool $default): void
+    public function registerType(string $blueprintClass, bool $default): void
     {
         // ...
     }
