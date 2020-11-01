@@ -7,12 +7,13 @@
  * LICENSE file that was distributed with this source code.
  */
 
-namespace Flarum\Pusher\Listener;
+namespace Flarum\Pusher;
 
-use Flarum\Notification\Event\Sending;
+use Flarum\Notification\Blueprint\BlueprintInterface;
+use Flarum\Notification\Driver\NotificationDriverInterface;
 use Pusher;
 
-class PushNotification
+class PusherNotificationDriver implements NotificationDriverInterface
 {
     /**
      * @var Pusher
@@ -24,14 +25,23 @@ class PushNotification
         $this->pusher = $pusher;
     }
 
-    public function handle(Sending $event)
+    /**
+     * {@inheritDoc}
+     */
+    public function send(BlueprintInterface $blueprint, array $users): void
     {
-        $blueprint = $event->blueprint;
-
-        foreach ($event->users as $user) {
+        foreach ($users as $user) {
             if ($user->shouldAlert($blueprint::getType())) {
                 $this->pusher->trigger('private-user'.$user->id, 'notification', null);
             }
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function addUserPreference(string $blueprintClass, bool $default): void
+    {
+        // ...
     }
 }
