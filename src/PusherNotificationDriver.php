@@ -11,18 +11,18 @@ namespace Flarum\Pusher;
 
 use Flarum\Notification\Blueprint\BlueprintInterface;
 use Flarum\Notification\Driver\NotificationDriverInterface;
-use Pusher;
+use Illuminate\Contracts\Queue\Queue;
 
 class PusherNotificationDriver implements NotificationDriverInterface
 {
     /**
-     * @var Pusher
+     * @var Queue
      */
-    protected $pusher;
+    protected $queue;
 
-    public function __construct(Pusher $pusher)
+    public function __construct(Queue $queue)
     {
-        $this->pusher = $pusher;
+        $this->queue = $queue;
     }
 
     /**
@@ -30,17 +30,13 @@ class PusherNotificationDriver implements NotificationDriverInterface
      */
     public function send(BlueprintInterface $blueprint, array $users): void
     {
-        foreach ($users as $user) {
-            if ($user->shouldAlert($blueprint::getType())) {
-                $this->pusher->trigger('private-user'.$user->id, 'notification', null);
-            }
-        }
+        $this->queue->push(new SendPusherNotificationsJob($blueprint, $users));
     }
 
     /**
      * {@inheritDoc}
      */
-    public function registerType(string $blueprintClass, bool $default): void
+    public function registerType(string $blueprintClass, array $driversEnabledByDefault): void
     {
         // ...
     }
