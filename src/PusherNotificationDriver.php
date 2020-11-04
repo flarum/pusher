@@ -30,7 +30,9 @@ class PusherNotificationDriver implements NotificationDriverInterface
      */
     public function send(BlueprintInterface $blueprint, array $users): void
     {
-        $this->queue->push(new SendPusherNotificationsJob($blueprint, $users));
+        if (count($users)) {
+            $this->queue->push(new SendPusherNotificationsJob($blueprint, $users));
+        }
     }
 
     /**
