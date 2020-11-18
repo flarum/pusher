@@ -33,6 +33,9 @@ return [
     (new Extend\Notification())
         ->driver('pusher', PusherNotificationDriver::class),
 
+    (new Extend\Event())
+        ->listen(Posted::class, Listener\PushNewPost::class),
+
     function (Dispatcher $events, Container $container) {
         $container->bind(Pusher::class, function ($app) {
             $settings = $app->make(SettingsRepositoryInterface::class);
@@ -51,7 +54,6 @@ return [
             );
         });
 
-        $events->listen(Posted::class, Listener\PushNewPost::class);
         $events->listen(Serializing::class, Listener\AddPusherApi::class);
     },
 ];
