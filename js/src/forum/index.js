@@ -8,39 +8,37 @@ import IndexPage from 'flarum/components/IndexPage';
 import Button from 'flarum/components/Button';
 
 app.initializers.add('flarum-pusher', () => {
-  const loadPusher = m.deferred();
-
-  $.getScript('//cdn.jsdelivr.net/npm/pusher-js@5', () => {
-    const socket = new Pusher(app.forum.attribute('pusherKey'), {
-      authEndpoint: app.forum.attribute('apiUrl') + '/pusher/auth',
-      cluster: app.forum.attribute('pusherCluster'),
-      auth: {
-        headers: {
-          'X-CSRF-Token': app.session.csrfToken
+  const loadPusher = new Promise((resolve) => {
+    $.getScript('//cdn.jsdelivr.net/npm/pusher-js@7.0.3/dist/pusher.min.js', () => {
+      const socket = new Pusher(app.forum.attribute('pusherKey'), {
+        authEndpoint: app.forum.attribute('apiUrl') + '/pusher/auth',
+        cluster: app.forum.attribute('pusherCluster'),
+        auth: {
+          headers: {
+            'X-CSRF-Token': app.session.csrfToken
+          }
         }
-      }
-    });
+      });
 
-    loadPusher.resolve({
-      channels: {
-        main: socket.subscribe('public'),
-        user: app.session.user ? socket.subscribe('private-user' + app.session.user.id()) : null,
-      },
-      pusher: socket
+      return resolve({
+        channels: {
+          main: socket.subscribe('public'),
+          user: app.session.user ? socket.subscribe('private-user' + app.session.user.id()) : null
+        },
+        pusher: socket
+      });
     });
   });
 
-  app.pusher = loadPusher.promise;
+  app.pusher = loadPusher;
   app.pushedUpdates = [];
 
-  extend(DiscussionList.prototype, 'config', function(x, isInitialized, context) {
-    if (isInitialized) return;
-
+  extend(DiscussionList.prototype, 'oncreate', function() {
     app.pusher.then(binding => {
       const pusher = binding.pusher;
 
-      pusher.bind('newPost', data => {
-        const params = this.props.params;
+      pusher.bind('newPost', data => 
+        const params = app.discussions.getParams();
 
         if (!params.q && !params.sort && !params.filter) {
           if (params.tags) {
@@ -51,10 +49,10 @@ app.initializers.add('flarum-pusher', () => {
 
           const id = String(data.discussionId);
 
-          if ((!app.current.discussion || id !== app.current.discussion.id()) && app.pushedUpdates.indexOf(id) === -1) {
+          if ((!app.current.get('discussion') || id !== app.current.get('discussion').id()) && app.pushedUpdates.indexOf(id) === -1) {
             app.pushedUpdates.push(id);
 
-            if (app.current instanceof IndexPage) {
+            if (app.current.matches(IndexPage)) {
               app.setTitleCount(app.pushedUpdates.length);
             }
 
@@ -62,8 +60,12 @@ app.initializers.add('flarum-pusher', () => {
           }
         }
       });
+    });
+  });
 
-      extend(context, 'onunload', () => pusher.unbind('newPost'));
+  extend(DiscussionList.prototype, 'onremove', function () {
+    app.pusher.then(binding => {
+      binding.pusher.unbind('newPost');
     });
   });
 
@@ -76,7 +78,7 @@ app.initializers.add('flarum-pusher', () => {
           Button.component({
             className: 'Button Button--block DiscussionList-update',
             onclick: () => {
-              this.refresh(false).then(() => {
+              this.attrs.state.refresh(false).then(() => {
                 this.loadingUpdated = false;
                 app.pushedUpdates = [];
                 app.setTitleCount(0);
@@ -84,9 +86,8 @@ app.initializers.add('flarum-pusher', () => {
               });
               this.loadingUpdated = true;
             },
-            loading: this.loadingUpdated,
-            children: app.translator.transChoice('flarum-pusher.forum.discussion_list.show_updates_text', count, {count})
-          })
+            loading: this.loadingUpdated
+          }, app.translator.transChoice('flarum-pusher.forum.discussion_list.show_updates_text', count, { count }))
         );
       }
     }
@@ -103,16 +104,14 @@ app.initializers.add('flarum-pusher', () => {
       app.pushedUpdates.splice(index, 1);
     }
 
-    if (app.current instanceof IndexPage) {
+    if (app.current.matches(IndexPage)) {
       app.setTitleCount(app.pushedUpdates.length);
     }
 
     m.redraw();
   });
 
-  extend(DiscussionPage.prototype, 'config', function(x, isInitialized, context) {
-    if (isInitialized) return;
-
+  extend(DiscussionPage.prototype, 'oncreate', function() {
     app.pusher.then(binding => {
       const pusher = binding.pusher;
 
@@ -133,8 +132,12 @@ app.initializers.add('flarum-pusher', () => {
           });
         }
       });
+    });
+  });
 
-      extend(context, 'onunload', () => pusher.unbind('newPost'));
+  extend(DiscussionPage.prototype, 'onremove', function () {
+    app.pusher.then(binding => {
+      binding.pusher.unbind('newPost');
     });
   });
 
@@ -151,7 +154,7 @@ app.initializers.add('flarum-pusher', () => {
           unreadNotificationCount: app.session.user.unreadNotificationCount() + 1,
           newNotificationCount: app.session.user.newNotificationCount() + 1
         });
-        delete app.cache.notifications;
+        app.notifications.clear();
         m.redraw();
       });
     }

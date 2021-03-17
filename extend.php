@@ -7,15 +7,12 @@
  * LICENSE file that was distributed with this source code.
  */
 
-use Flarum\Api\Event\Serializing;
 use Flarum\Extend;
-use Flarum\Notification\Event\Sending;
 use Flarum\Post\Event\Posted;
 use Flarum\Pusher\Api\Controller\AuthController;
 use Flarum\Pusher\Listener;
-use Flarum\Settings\SettingsRepositoryInterface;
-use Illuminate\Contracts\Container\Container;
-use Illuminate\Contracts\Events\Dispatcher;
+use Flarum\Pusher\Provider\PusherProvider;
+use Flarum\Pusher\PusherNotificationDriver;
 
 return [
     (new Extend\Frontend('forum'))
@@ -28,26 +25,18 @@ return [
     (new Extend\Routes('api'))
         ->post('/pusher/auth', 'pusher.auth', AuthController::class),
 
-    function (Dispatcher $events, Container $container) {
-        $container->bind(Pusher::class, function ($app) {
-            $settings = $app->make(SettingsRepositoryInterface::class);
+    new Extend\Locales(__DIR__.'/locale'),
 
-            $options = [];
+    (new Extend\Notification())
+        ->driver('pusher', PusherNotificationDriver::class),
 
-            if ($cluster = $settings->get('flarum-pusher.app_cluster')) {
-                $options['cluster'] = $cluster;
-            }
+    (new Extend\Settings())
+        ->serializeToForum('pusherKey', 'flarum-pusher.app_key')
+        ->serializeToForum('pusherCluster', 'flarum-pusher.app_cluster'),
 
-            return new Pusher(
-                $settings->get('flarum-pusher.app_key'),
-                $settings->get('flarum-pusher.app_secret'),
-                $settings->get('flarum-pusher.app_id'),
-                $options
-            );
-        });
+    (new Extend\Event())
+        ->listen(Posted::class, Listener\PushNewPost::class),
 
-        $events->listen(Posted::class, Listener\PushNewPost::class);
-        $events->listen(Sending::class, Listener\PushNotification::class);
-        $events->listen(Serializing::class, Listener\AddPusherApi::class);
-    },
+    (new Extend\ServiceProvider())
+        ->register(PusherProvider::class),
 ];

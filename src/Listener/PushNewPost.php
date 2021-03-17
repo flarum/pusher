@@ -53,10 +53,12 @@ class PushNewPost
         }
 
         if (count($channels)) {
+            $tags = $event->post->discussion->tags;
+
             $this->pusher->trigger($channels, 'newPost', [
-                'postId'       => $event->post->id,
+                'postId' => $event->post->id,
                 'discussionId' => $event->post->discussion->id,
-                'tagIds'       => $event->post->discussion->tags()->pluck('id')
+                'tagIds' => $tags ? $tags->pluck('id') : null
             ]);
         }
     }
