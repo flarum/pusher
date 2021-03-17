@@ -9,7 +9,7 @@ import Button from 'flarum/components/Button';
 
 app.initializers.add('flarum-pusher', () => {
   const loadPusher = new Promise((resolve) => {
-    $.getScript('//cdn.jsdelivr.net/npm/pusher-js@7.0.3/dist/pusher.min.js', () => {
+    $.getScript('//cdn.jsdelivr.net/npm/pusher-js@7.0.3/dist/web/pusher.min.js', () => {
       const socket = new Pusher(app.forum.attribute('pusherKey'), {
         authEndpoint: app.forum.attribute('apiUrl') + '/pusher/auth',
         cluster: app.forum.attribute('pusherCluster'),
@@ -37,7 +37,7 @@ app.initializers.add('flarum-pusher', () => {
     app.pusher.then(binding => {
       const pusher = binding.pusher;
 
-      pusher.bind('newPost', data => 
+      pusher.bind('newPost', data => {
         const params = app.discussions.getParams();
 
         if (!params.q && !params.sort && !params.filter) {
