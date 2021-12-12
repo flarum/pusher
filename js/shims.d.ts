@@ -1,4 +1,3 @@
-import ForumApplication from 'flarum/forum/ForumApplication';
 import * as PusherTypes from 'pusher-js';
 
 declare module 'flarum/forum/ForumApplication' {
@@ -13,8 +12,4 @@ declare module 'flarum/forum/ForumApplication' {
 
     pushedUpdates: Array<any>;
   }
-}
-
-declare global {
-  app: ForumApplication;
 }
