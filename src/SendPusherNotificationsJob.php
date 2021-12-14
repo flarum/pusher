@@ -17,7 +17,6 @@ use Pusher\ApiErrorException;
 use Pusher\Pusher;
 use Pusher\PusherException;
 
-
 class SendPusherNotificationsJob extends AbstractJob
 {
     /**
