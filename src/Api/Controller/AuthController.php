@@ -17,7 +17,8 @@ use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Pusher;
+use Pusher\Pusher;
+use Pusher\PusherException;
 
 class AuthController implements RequestHandlerInterface
 {
@@ -37,6 +38,7 @@ class AuthController implements RequestHandlerInterface
     /**
      * @param ServerRequestInterface $request
      * @return ResponseInterface
+     * @throws PusherException
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
@@ -51,7 +53,7 @@ class AuthController implements RequestHandlerInterface
                 ['cluster' => $this->settings->get('flarum-pusher.app_cluster')]
             );
 
-            $payload = json_decode($pusher->socket_auth($userChannel, Arr::get($body, 'socket_id')), true);
+            $payload = json_decode($pusher->socketAuth($userChannel, Arr::get($body, 'socket_id')), true);
 
             return new JsonResponse($payload);
         }
