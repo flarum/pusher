@@ -96,25 +96,6 @@ app.initializers.add('flarum-pusher', () => {
     }
   });
 
-  // Prevent any newly-created discussions from triggering the discussion list
-  // update button showing.
-  // TODO: Might be better pause the response to the push updates while the
-  // composer is loading? idk
-  // TODO: It seems that this is not used
-  extend(DiscussionList.prototype, 'addDiscussion', function (returned, discussion) {
-    const index = app.pushedUpdates.indexOf(discussion.id());
-
-    if (index !== -1) {
-      app.pushedUpdates.splice(index, 1);
-    }
-
-    if (app.current.matches(IndexPage)) {
-      app.setTitleCount(app.pushedUpdates.length);
-    }
-
-    m.redraw();
-  });
-
   extend(DiscussionPage.prototype, 'oncreate', function () {
     app.pusher.then((binding) => {
       const pusher = binding.pusher;
