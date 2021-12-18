@@ -7,10 +7,15 @@ import IndexPage from 'flarum/forum/components/IndexPage';
 import Button from 'flarum/common/components/Button';
 import ItemList from 'flarum/common/utils/ItemList';
 import { VnodeDOM } from 'Mithril';
+import Pusher from 'pusher-js';
 
 app.initializers.add('flarum-pusher', () => {
   app.pusher = new Promise((resolve) => {
-    $.getScript('//cdn.jsdelivr.net/npm/pusher-js@7.0.3/dist/web/pusher.min.js', () => {
+    const script = document.createElement('script');
+    script.src = '//cdn.jsdelivr.net/npm/pusher-js@7.0.3/dist/web/pusher.min.js';
+    document.head.appendChild(script);
+
+    script.onload = () => {
       const socket: PusherTypes.default = new Pusher(app.forum.attribute('pusherKey'), {
         authEndpoint: `${app.forum.attribute('apiUrl')}/pusher/auth`,
         cluster: app.forum.attribute('pusherCluster'),
@@ -28,7 +33,7 @@ app.initializers.add('flarum-pusher', () => {
         },
         pusher: socket,
       });
-    });
+    };
   });
 
   app.pushedUpdates = [];
@@ -112,7 +117,7 @@ app.initializers.add('flarum-pusher', () => {
             if (!document.hasFocus()) {
               app.setTitleCount(Math.max(0, this.discussion.commentCount() - oldCount));
 
-              $(window).one('focus', () => app.setTitleCount(0));
+              window.addEventListener('focus', () => app.setTitleCount(0));
             }
           });
         }
