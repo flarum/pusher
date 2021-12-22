@@ -112,7 +112,7 @@ app.initializers.add('flarum-pusher', () => {
             if (!document.hasFocus()) {
               app.setTitleCount(Math.max(0, this.discussion.commentCount() - oldCount));
 
-              window.addEventListener('focus', () => app.setTitleCount(0));
+              window.addEventListener('focus', () => app.setTitleCount(0), { once: true });
             }
           });
         }
