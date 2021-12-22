@@ -12,10 +12,7 @@ namespace Flarum\Pusher;
 use Flarum\Notification\Blueprint\BlueprintInterface;
 use Flarum\Queue\AbstractJob;
 use Flarum\User\User;
-use GuzzleHttp\Exception\GuzzleException;
-use Pusher\ApiErrorException;
-use Pusher\Pusher;
-use Pusher\PusherException;
+use Pusher;
 
 class SendPusherNotificationsJob extends AbstractJob
 {
@@ -35,11 +32,6 @@ class SendPusherNotificationsJob extends AbstractJob
         $this->recipients = $recipients;
     }
 
-    /**
-     * @throws PusherException
-     * @throws ApiErrorException
-     * @throws GuzzleException
-     */
     public function handle(Pusher $pusher)
     {
         foreach ($this->recipients as $user) {

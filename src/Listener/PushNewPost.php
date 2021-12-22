@@ -12,11 +12,8 @@ namespace Flarum\Pusher\Listener;
 use Flarum\Post\Event\Posted;
 use Flarum\User\Guest;
 use Flarum\User\User;
-use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Support\Str;
-use Pusher\ApiErrorException;
-use Pusher\Pusher;
-use Pusher\PusherException;
+use Pusher;
 
 class PushNewPost
 {
@@ -30,11 +27,6 @@ class PushNewPost
         $this->pusher = $pusher;
     }
 
-    /**
-     * @throws PusherException
-     * @throws ApiErrorException
-     * @throws GuzzleException
-     */
     public function handle(Posted $event)
     {
         $channels = [];
@@ -43,7 +35,7 @@ class PushNewPost
             $channels[] = 'public';
         } else {
             // Retrieve private channels, used for each user.
-            $response = $this->pusher->getChannels([
+            $response = $this->pusher->get_channels([
                 'filter_by_prefix' => 'private-user'
             ]);
 
