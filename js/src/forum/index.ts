@@ -7,33 +7,28 @@ import IndexPage from 'flarum/forum/components/IndexPage';
 import Button from 'flarum/common/components/Button';
 import ItemList from 'flarum/common/utils/ItemList';
 import { VnodeDOM } from 'Mithril';
-import Pusher from 'pusher-js';
 
 app.initializers.add('flarum-pusher', () => {
-  app.pusher = new Promise((resolve) => {
-    const script = document.createElement('script');
-    script.src = '//cdn.jsdelivr.net/npm/pusher-js@7.0.3/dist/web/pusher.min.js';
-    document.head.appendChild(script);
+  app.pusher = new Promise(async (resolve) => {
+    await import('//cdn.jsdelivr.net/npm/pusher-js@7.0.3/dist/web/pusher.min.js' /* webpackIgnore: true, webpackPrefetch: true */);
 
-    script.onload = () => {
-      const socket: PusherTypes.default = new Pusher(app.forum.attribute('pusherKey'), {
-        authEndpoint: `${app.forum.attribute('apiUrl')}/pusher/auth`,
-        cluster: app.forum.attribute('pusherCluster'),
-        auth: {
-          headers: {
-            'X-CSRF-Token': app.session.csrfToken,
-          },
+    const socket: PusherTypes.default = new Pusher(app.forum.attribute('pusherKey'), {
+      authEndpoint: `${app.forum.attribute('apiUrl')}/pusher/auth`,
+      cluster: app.forum.attribute('pusherCluster'),
+      auth: {
+        headers: {
+          'X-CSRF-Token': app.session.csrfToken,
         },
-      });
+      },
+    });
 
-      return resolve({
-        channels: {
-          main: socket.subscribe('public'),
-          user: app.session.user ? socket.subscribe(`private-user${app.session.user.id()}`) : null,
-        },
-        pusher: socket,
-      });
-    };
+    return resolve({
+      channels: {
+        main: socket.subscribe('public'),
+        user: app.session.user ? socket.subscribe(`private-user${app.session.user.id()}`) : null,
+      },
+      pusher: socket,
+    });
   });
 
   app.pushedUpdates = [];
