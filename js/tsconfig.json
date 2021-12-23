@@ -8,6 +8,6 @@
     "paths": {
       "flarum/*": ["../vendor/flarum/core/js/dist-typings/*"]
     },
-    "module": "ES2020"
+    "module": "es2020"
   }
 }
