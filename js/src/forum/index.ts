@@ -9,7 +9,7 @@ import ItemList from 'flarum/common/utils/ItemList';
 import { VnodeDOM } from 'Mithril';
 
 app.initializers.add('flarum-pusher', () => {
-  app.pusher = new Promise(async (resolve) => {
+  app.pusher = (async () => {
     await import('//cdn.jsdelivr.net/npm/pusher-js@7.0.3/dist/web/pusher.min.js' /* webpackIgnore: true, webpackPrefetch: true */);
 
     const socket: PusherTypes.default = new Pusher(app.forum.attribute('pusherKey'), {
@@ -22,14 +22,14 @@ app.initializers.add('flarum-pusher', () => {
       },
     });
 
-    return resolve({
+    return {
       channels: {
         main: socket.subscribe('public'),
         user: app.session.user ? socket.subscribe(`private-user${app.session.user.id()}`) : null,
       },
       pusher: socket,
-    });
-  });
+    };
+  })();
 
   app.pushedUpdates = [];
 
