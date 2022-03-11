@@ -31,15 +31,15 @@ class PushNewPost
     {
         $channels = [];
 
-        if ($event->post->isVisibleTo(new Guest)) {
+        if ($event->post->isVisibleTo(new Guest())) {
             $channels[] = 'public';
         } else {
             // Retrieve private channels, used for each user.
             $response = $this->pusher->get_channels([
-                'filter_by_prefix' => 'private-user'
+                'filter_by_prefix' => 'private-user',
             ]);
 
-            if (! $response) {
+            if (!$response) {
                 return;
             }
 
@@ -56,9 +56,9 @@ class PushNewPost
             $tags = $event->post->discussion->tags;
 
             $this->pusher->trigger($channels, 'newPost', [
-                'postId' => $event->post->id,
+                'postId'       => $event->post->id,
                 'discussionId' => $event->post->discussion->id,
-                'tagIds' => $tags ? $tags->pluck('id') : null
+                'tagIds'       => $tags ? $tags->pluck('id') : null,
             ]);
         }
     }
